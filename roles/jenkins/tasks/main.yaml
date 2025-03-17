@@ -1,0 +1,28 @@
+- name: Instalar Java y Jenkins
+  apt:
+    name:
+      - openjdk-17-jdk
+      - curl
+    state: present
+    update_cache: yes
+
+- name: Agregar clave Jenkins
+  shell: |
+    curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | tee /usr/share/keyrings/jenkins-keyring.asc
+
+- name: Añadir repositorio Jenkins
+  apt_repository:
+    repo: \"deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/\"
+    state: present
+
+- name: Instalar Jenkins
+  apt:
+    name: jenkins
+    state: present
+    update_cache: yes
+
+- name: Iniciar Jenkins
+  systemd:
+    name: jenkins
+    state: started
+    enabled: yes

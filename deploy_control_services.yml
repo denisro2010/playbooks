@@ -1,0 +1,9 @@
+- name: Instalación Servicios Control
+  hosts: control
+  become: true
+
+  roles:
+    - git_server
+    - jenkins
+    - docker_registry
+    - vault

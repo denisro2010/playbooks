@@ -1,0 +1,15 @@
+- name: Instalar Docker
+  apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+
+- name: Crear directorio Docker Registry
+  file:
+    path: /opt/docker-registry
+    state: directory
+
+- name: Docker Registry con Docker Compose
+  copy:
+    dest: /opt/docker-registry/docker-compose.yml
+    content: |\n      version: '3'\n      services:\n        registry:\n          image: registry:2\n          ports:\n            - \"5000:5000\"\n          restart: always\n\n- name: Levantar Docker Registry\n  command: docker compose up -d\n  args:\n    chdir: /opt/docker-registry\n"} 

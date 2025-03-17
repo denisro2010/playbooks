@@ -1,0 +1,28 @@
+- name: Descargar Vault
+  unarchive:
+    src: https://releases.hashicorp.com/vault/1.15.4/vault_1.15.4_linux_amd64.zip
+    dest: /usr/local/bin
+    remote_src: yes
+
+- name: Crear usuario vault
+  user:
+    name: vault
+    shell: /bin/false
+
+- name: Crear configuración Vault
+  copy:
+    dest: /etc/vault.hcl
+    content: |
+      storage \"file\" {
+        path = \"/opt/vault/data\"
+      }
+      listener \"tcp\" {
+        address = \"0.0.0.0:8200\"
+        tls_disable = true
+      }
+      ui = true
+
+- name: Servicio Vault systemd
+  copy:
+    dest: /etc/systemd/system/vault.service
+    content: |\n      [Unit]\n      Description=Vault\n      After=network-online.target\n\n      [Service]\n      User=vault\n      ExecStart=/usr/local/bin/vault server -config=/etc/vault.hcl\n      ExecReload=/bin/kill --signal HUP $MAINPID\n      KillMode=process\n      Restart=on-failure\n\n      [Install]\n      WantedBy=multi-user.target\n\n- name: Iniciar Vault\n  systemd:\n    name: vault\n    state: started\n    enabled: yes\n"} 

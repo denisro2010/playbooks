@@ -1,0 +1,29 @@
+- name: Instalar Git
+  apt:
+    name: git
+    state: present
+    update_cache: yes
+
+- name: Crear usuario 'git'
+  user:
+    name: git
+    shell: /usr/bin/git-shell
+    create_home: yes
+
+- name: Crear carpeta repositorios
+  file:
+    path: /home/git/repos
+    state: directory
+    owner: git
+    group: git
+
+- name: Crear repo ejemplo vacío
+  command: git init --bare /home/git/repos/control.git
+  args:
+    creates: /home/git/repos/control.git
+
+- name: Autorizar clave pública (Ejemplo)
+  authorized_key:
+    user: git
+    state: present
+    key: \"{{ lookup('file', '~/.ssh/id_rsa.pub') }}\"
