@@ -1,28 +1,70 @@
+- name: Instalar unzip
+  apt:
+    name: unzip
+    state: present
+    update_cache: yes
+
 - name: Descargar Vault
   unarchive:
     src: https://releases.hashicorp.com/vault/1.15.4/vault_1.15.4_linux_amd64.zip
-    dest: /usr/local/bin
+    dest: /usr/local/bin/
     remote_src: yes
+    mode: '0755'
 
 - name: Crear usuario vault
   user:
     name: vault
     shell: /bin/false
+    system: yes
 
-- name: Crear configuración Vault
+- name: Crear directorio datos Vault
+  file:
+    path: /opt/vault/data
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0750'
+
+- name: Crear archivo configuración Vault
   copy:
     dest: /etc/vault.hcl
     content: |
-      storage \"file\" {
-        path = \"/opt/vault/data\"
+      storage "file" {
+        path = "/opt/vault/data"
       }
-      listener \"tcp\" {
-        address = \"0.0.0.0:8200\"
+      listener "tcp" {
+        address     = "0.0.0.0:8200"
         tls_disable = true
       }
       ui = true
 
-- name: Servicio Vault systemd
+- name: Crear servicio systemd para Vault
   copy:
     dest: /etc/systemd/system/vault.service
-    content: |\n      [Unit]\n      Description=Vault\n      After=network-online.target\n\n      [Service]\n      User=vault\n      ExecStart=/usr/local/bin/vault server -config=/etc/vault.hcl\n      ExecReload=/bin/kill --signal HUP $MAINPID\n      KillMode=process\n      Restart=on-failure\n\n      [Install]\n      WantedBy=multi-user.target\n\n- name: Iniciar Vault\n  systemd:\n    name: vault\n    state: started\n    enabled: yes\n"} 
+    content: |
+      [Unit]
+      Description=Vault
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      User=vault
+      Group=vault
+      ExecStart=/usr/local/bin/vault server -config=/etc/vault.hcl
+      ExecReload=/bin/kill --signal HUP $MAINPID
+      Restart=on-failure
+      KillMode=process
+      LimitNOFILE=65536
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Recargar systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Iniciar y habilitar Vault
+  systemd:
+    name: vault
+    state: started
+    enabled: yes
